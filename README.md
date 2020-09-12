@@ -1,4 +1,6 @@
-# Spring Boot JWT Authentication example with Spring Security & Spring Data JPA
+# RP2 Project Server
+
+### This project is part of the Problem Based Learning (pt: Resolução de Problemas) subject at the University of São Paulo (USP).
 
 ## Run Spring Boot application
 ```
