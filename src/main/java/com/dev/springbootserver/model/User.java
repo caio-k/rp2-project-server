@@ -39,6 +39,26 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "favorites",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "place_id")
+    )
+    private Set<Place> favoritePlaces = new HashSet<>();
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "teacher",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "school_id")
+    )
+    private Set<School> schoolsTeacher = new HashSet<>();
+
+    @OneToMany(mappedBy = "user")
+    private Set<UserUsePlace> userUsePlaces = new HashSet<>();
+
+    @OneToMany(mappedBy = "user")
+    private Set<ExitLog> exitLogs = new HashSet<>();
+
     public User() {
     }
 
@@ -86,5 +106,37 @@ public class User {
 
     public void setRoles(Set<Role> roles) {
         this.roles = roles;
+    }
+
+    public Set<Place> getFavoritePlaces() {
+        return favoritePlaces;
+    }
+
+    public void setFavoritePlaces(Set<Place> favoritePlaces) {
+        this.favoritePlaces = favoritePlaces;
+    }
+
+    public Set<School> getSchoolsTeacher() {
+        return schoolsTeacher;
+    }
+
+    public void setSchoolsTeacher(Set<School> schoolsTeacher) {
+        this.schoolsTeacher = schoolsTeacher;
+    }
+
+    public Set<UserUsePlace> getUserUsePlaces() {
+        return userUsePlaces;
+    }
+
+    public void setUserUsePlaces(Set<UserUsePlace> userUsePlaces) {
+        this.userUsePlaces = userUsePlaces;
+    }
+
+    public Set<ExitLog> getExitLogs() {
+        return exitLogs;
+    }
+
+    public void setExitLogs(Set<ExitLog> exitLogs) {
+        this.exitLogs = exitLogs;
     }
 }
