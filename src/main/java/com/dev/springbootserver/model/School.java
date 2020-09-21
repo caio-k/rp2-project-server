@@ -3,6 +3,7 @@ package com.dev.springbootserver.model;
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 @Entity
@@ -61,5 +62,18 @@ public class School {
 
     public void setSchoolTeachers(Set<User> schoolTeachers) {
         this.schoolTeachers = schoolTeachers;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        School school = (School) o;
+        return name.equals(school.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
     }
 }
