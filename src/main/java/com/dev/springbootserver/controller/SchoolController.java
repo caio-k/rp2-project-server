@@ -2,6 +2,7 @@ package com.dev.springbootserver.controller;
 
 import com.dev.springbootserver.dto.request.SchoolRequest;
 import com.dev.springbootserver.dto.response.SchoolResponse;
+import com.dev.springbootserver.errors.ResourceNotFoundException;
 import com.dev.springbootserver.messages.MessagesComponent;
 import com.dev.springbootserver.model.School;
 import com.dev.springbootserver.model.User;
@@ -15,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -35,13 +35,7 @@ public class SchoolController {
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> listAllSchoolsByUsername(@RequestBody String username) {
 
-        Optional<User> optionalUser = userRepository.findByUsername(username);
-
-        if (!optionalUser.isPresent()) {
-            return badRequest(messages.get("USER_NOT_FOUND"));
-        }
-
-        User user = optionalUser.get();
+        User user = getUserByUsername(username);
 
         List<SchoolResponse> schoolResponses = new ArrayList<>();
 
@@ -59,40 +53,25 @@ public class SchoolController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> listAdminSchoolByUsername(@RequestBody String username) {
 
-        Optional<User> optionalUser = userRepository.findByUsername(username);
+        User user = getUserByUsername(username);
 
-        if (!optionalUser.isPresent()) {
-            return badRequest(messages.get("USER_NOT_FOUND"));
-        }
+        School school = schoolRepository.findSchoolByRepresentativeUser(user)
+                .orElseThrow(() -> new ResourceNotFoundException(messages.get("ADMIN_WITHOUT_SCHOOL")));
 
-        User user = optionalUser.get();
-
-        Optional<School> school = schoolRepository.findSchoolByRepresentativeUser(user);
-
-        if (school.isPresent()) {
-            return ResponseEntity.ok(
-                    new SchoolResponse(
-                            school.get().getId(),
-                            school.get().getName(),
-                            school.get().getRepresentativeUser().getUsername()
-                    )
-            );
-        } else {
-            return badRequest(messages.get("ADMIN_WITHOUT_SCHOOL"));
-        }
+        return ResponseEntity.ok(
+                new SchoolResponse(
+                        school.getId(),
+                        school.getName(),
+                        school.getRepresentativeUser().getUsername()
+                )
+        );
     }
 
     @PostMapping("/create")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> createSchool(@RequestBody SchoolRequest schoolRequest) {
 
-        Optional<User> optionalUser = userRepository.findByUsername(schoolRequest.getSchoolPrincipalUsername());
-
-        if (!optionalUser.isPresent()) {
-            return badRequest(messages.get("USER_NOT_FOUND"));
-        }
-
-        User user = optionalUser.get();
+        User user = getUserByUsername(schoolRequest.getSchoolPrincipalUsername());
 
         if (schoolRepository.existsByRepresentativeUser(user)) {
             return badRequest(messages.get("ADMIN_WITH_SCHOOL"));
@@ -116,13 +95,7 @@ public class SchoolController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateSchool(@RequestBody SchoolRequest schoolRequest) {
 
-        Optional<School> schoolOptional = schoolRepository.findById(schoolRequest.getSchoolId());
-
-        if (!schoolOptional.isPresent()) {
-            return badRequest(messages.get("INVALID_SCHOOL_ID"));
-        }
-
-        School school = schoolOptional.get();
+        School school = getSchoolById(schoolRequest.getSchoolId());
 
         if (school.getName().equals(schoolRequest.getSchoolName())) {
             return ResponseEntity.ok(new MessageResponse(messages.get("SCHOOL_UPDATED_SUCCESS_WITHOUT_CHANGES")));
@@ -149,5 +122,15 @@ public class SchoolController {
         return ResponseEntity
                 .badRequest()
                 .body(new MessageResponse(message));
+    }
+
+    private School getSchoolById(Long id) {
+        return schoolRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(messages.get("INVALID_SCHOOL_ID")));
+    }
+
+    private User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException(messages.get("USER_NOT_FOUND")));
     }
 }
