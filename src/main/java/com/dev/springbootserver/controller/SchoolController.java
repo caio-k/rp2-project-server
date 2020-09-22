@@ -33,7 +33,7 @@ public class SchoolController {
 
     @GetMapping("/allSchoolsByUser")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> listAllSchoolsByUsername(@RequestBody String username) {
+    public ResponseEntity<?> listAllSchoolsByUsername(@RequestParam(value = "username") String username) {
 
         User user = getUserByUsername(username);
 
@@ -51,7 +51,7 @@ public class SchoolController {
 
     @GetMapping("/adminSchool")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> listAdminSchoolByUsername(@RequestBody String username) {
+    public ResponseEntity<?> listAdminSchoolByUsername(@RequestParam(value = "username") String username) {
 
         User user = getUserByUsername(username);
 

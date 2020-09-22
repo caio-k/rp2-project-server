@@ -33,7 +33,7 @@ public class UserController {
 
     @PostMapping("/addSchool")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> addTeacher(@RequestBody UserSchoolRequest userSchoolRequest) {
+    public ResponseEntity<?> addSchool(@RequestBody UserSchoolRequest userSchoolRequest) {
 
         School school = getSchoolById(userSchoolRequest.getSchoolId());
         User user = getUserByUsername(userSchoolRequest.getUsername());
@@ -58,7 +58,7 @@ public class UserController {
 
     @DeleteMapping("/removeSchool")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> removeTeacher(@RequestBody UserSchoolRequest userSchoolRequest) {
+    public ResponseEntity<?> removeSchool(@RequestBody UserSchoolRequest userSchoolRequest) {
 
         School school = getSchoolById(userSchoolRequest.getSchoolId());
         User user = getUserByUsername(userSchoolRequest.getUsername());
