@@ -1,5 +1,6 @@
 package com.dev.springbootserver.controller;
 
+import com.dev.springbootserver.messages.MessagesComponent;
 import com.dev.springbootserver.model.ERole;
 import com.dev.springbootserver.model.Role;
 import com.dev.springbootserver.model.User;
@@ -46,6 +47,9 @@ public class AuthController {
     @Autowired
     JwtUtils jwtUtils;
 
+    @Autowired
+    MessagesComponent messages;
+
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
 
@@ -73,13 +77,13 @@ public class AuthController {
         if (userRepository.existsByUsername(signUpRequest.getUsername())) {
             return ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Error: Username is already taken!"));
+                    .body(new MessageResponse(messages.get("USERNAME_ALREADY_TAKEN")));
         }
 
         if (userRepository.existsByEmail(signUpRequest.getEmail())) {
             return ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Error: Email is already in use!"));
+                    .body(new MessageResponse(messages.get("EMAIL_ALREADY_TAKEN")));
         }
 
         User user = new User(signUpRequest.getUsername(),
@@ -91,17 +95,17 @@ public class AuthController {
 
         if (strRoles == null) {
             Role userRole = roleRepository.findByName(ERole.ROLE_USER)
-                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                    .orElseThrow(() -> new RuntimeException(messages.get("ROLE_NOT_FOUND")));
             roles.add(userRole);
         } else {
             strRoles.forEach(role -> {
                 if ("admin".equals(role)) {
                     Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
-                            .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                            .orElseThrow(() -> new RuntimeException(messages.get("ROLE_NOT_FOUND")));
                     roles.add(adminRole);
                 } else {
                     Role userRole = roleRepository.findByName(ERole.ROLE_USER)
-                            .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                            .orElseThrow(() -> new RuntimeException(messages.get("ROLE_NOT_FOUND")));
                     roles.add(userRole);
                 }
             });
@@ -110,6 +114,6 @@ public class AuthController {
         user.setRoles(roles);
         userRepository.save(user);
 
-        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+        return ResponseEntity.ok(new MessageResponse(messages.get("USER_REGISTERED_SUCCESS")));
     }
 }
