@@ -1,7 +1,6 @@
 package com.dev.springbootserver.controller;
 
 import com.dev.springbootserver.dto.request.PlaceRequest;
-import com.dev.springbootserver.dto.request.UserSchoolRequest;
 import com.dev.springbootserver.errors.ResourceNotFoundException;
 import com.dev.springbootserver.messages.MessagesComponent;
 import com.dev.springbootserver.model.*;
@@ -33,14 +32,13 @@ public class PlaceController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> addPlace(@RequestBody PlaceRequest placeRequest) {
 
-        Boolean doesPlaceExist = checkPlaceExists(placeRequest.getPlaceName(), placeRequest.getPlaceSchoolId());
+        boolean doesPlaceExist = checkPlaceExists(placeRequest.getPlaceName(), placeRequest.getPlaceSchoolId());
 
         if (doesPlaceExist) {
-            return ResponseEntity.ok(new MessageResponse(messages.get("PlACE_ALREADY_REGISTERED_IN_SCHOOL")));
+            return badRequest(messages.get("PlACE_NAME_ALREADY_EXISTS_IN_SCHOOL"));
         }
 
-        final int minimumTime = 60;
-        final int minimumOccupation = 1;
+        int minimumTime = 60, minimumOccupation = 1;
 
         if (placeRequest.getPlaceLimitTimeSeconds() < minimumTime) {
             return badRequest(messages.get("TIME_LIMIT_T00_LITTLE"));
@@ -49,7 +47,7 @@ public class PlaceController {
             return badRequest(messages.get("MAX_PEOPLE_LESS_THAN_1"));
         }
 
-        Place place = new Place(placeRequest.getPlaceName(), placeRequest.getPlaceType(), placeRequest.getPlaceCounter(),
+        Place place = new Place(placeRequest.getPlaceName(), EPlace.valueOf(placeRequest.getPlaceType()), 0,
                 placeRequest.getPlaceMaxPeople(), placeRequest.getPlaceLimitTimeSeconds(), getSchoolById(placeRequest.getPlaceSchoolId()));
 
         placeRepository.save(place);
@@ -59,17 +57,15 @@ public class PlaceController {
         );
     }
 
-    @DeleteMapping("/removeSchool")
+    @DeleteMapping("/removePlace")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> removePlace(@RequestBody UserSchoolRequest userSchoolRequest, @RequestBody PlaceRequest placeRequest) {
+    public ResponseEntity<?> removePlace(@RequestBody PlaceRequest placeRequest) {
 
-        Place place = getPlaceById(placeRequest.getPlaceId());
+        Place place = getPlaceByNameAndSchoolId(placeRequest.getPlaceName(), placeRequest.getPlaceSchoolId());
 
         placeRepository.delete(place);
 
-        return ResponseEntity.ok(
-                ResponseEntity.ok(new MessageResponse(messages.get("PLACE_DELETED")))
-        );
+        return ResponseEntity.ok(new MessageResponse(messages.get("PLACE_DELETED")));
     }
 
     private ResponseEntity<?> badRequest(String message) {
@@ -83,9 +79,9 @@ public class PlaceController {
                 .orElseThrow(() -> new ResourceNotFoundException(messages.get("INVALID_SCHOOL_ID")));
     }
 
-    private Place getPlaceById(Long id) {
-        return placeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(messages.get("INVALID_PLACE_ID")));
+    private Place getPlaceByNameAndSchoolId(String name, Long schoolId) {
+        return placeRepository.findByNameAndSchoolId(name, schoolId)
+                .orElseThrow(() -> new ResourceNotFoundException(messages.get("INVALID_PLACE_NAME")));
     }
 
     private boolean checkPlaceExists(String name, Long schoolId) {

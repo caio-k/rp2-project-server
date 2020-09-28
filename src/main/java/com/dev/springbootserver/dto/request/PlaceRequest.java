@@ -1,12 +1,6 @@
 package com.dev.springbootserver.dto.request;
 
-import com.dev.springbootserver.model.EPlace;
-
 public class PlaceRequest {
-
-    private Long placeId;
-
-    private int placeCounter;
 
     private String placeName;
 
@@ -14,25 +8,9 @@ public class PlaceRequest {
 
     private int placeMaxPeople;
 
-    private EPlace placeType;
+    private String placeType;
 
     private Long placeSchoolId;
-
-    public Long getPlaceId() {
-        return placeId;
-    }
-
-    public void setPlaceId(Long placeId) {
-        this.placeId = placeId;
-    }
-
-    public int getPlaceCounter() {
-        return placeCounter;
-    }
-
-    public void setPlaceCounter(int placeCounter) {
-        this.placeCounter = placeCounter;
-    }
 
     public String getPlaceName() {
         return placeName;
@@ -58,11 +36,11 @@ public class PlaceRequest {
         this.placeMaxPeople = placeMaxPeople;
     }
 
-    public EPlace getPlaceType() {
+    public String getPlaceType() {
         return placeType;
     }
 
-    public void setPlaceType(EPlace placeType) {
+    public void setPlaceType(String placeType) {
         this.placeType = placeType;
     }
 
