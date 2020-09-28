@@ -45,7 +45,8 @@ public class PlaceController {
                         place.getName(),
                         place.getType().name(),
                         place.getMaxPeople(),
-                        place.getLimitTimeSeconds()
+                        place.getLimitTimeSeconds(),
+                        place.getSchool().getId()
                 ))
         );
 
