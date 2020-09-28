@@ -2,6 +2,8 @@ package com.dev.springbootserver.dto.request;
 
 public class PlaceRequest {
 
+    private Long placeId;
+
     private String placeName;
 
     private int placeLimitTimeSeconds;
@@ -11,6 +13,14 @@ public class PlaceRequest {
     private String placeType;
 
     private Long placeSchoolId;
+
+    public Long getPlaceId() {
+        return placeId;
+    }
+
+    public void setPlaceId(Long placeId) {
+        this.placeId = placeId;
+    }
 
     public String getPlaceName() {
         return placeName;
