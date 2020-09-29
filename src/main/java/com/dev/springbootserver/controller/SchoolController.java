@@ -88,7 +88,13 @@ public class SchoolController {
         School school = new School(schoolRequest.getSchoolName(), user);
         schoolRepository.save(school);
 
-        return ResponseEntity.ok(new MessageResponse(messages.get("SCHOOL_REGISTERED_SUCCESS")));
+        return ResponseEntity.ok(
+                new SchoolResponse(
+                        school.getId(),
+                        school.getName(),
+                        school.getRepresentativeUser().getUsername()
+                )
+        );
     }
 
     @PutMapping("/update")
