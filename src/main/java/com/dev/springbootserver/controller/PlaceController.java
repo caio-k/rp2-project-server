@@ -57,6 +57,10 @@ public class PlaceController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> addPlace(@RequestBody PlaceRequest placeRequest) {
 
+        if (isInvalidPlaceName(placeRequest.getPlaceName())) {
+            return badRequest(messages.get("EMPTY_PLACE_NAME"));
+        }
+
         boolean doesPlaceExist = checkPlaceExists(placeRequest.getPlaceName(), placeRequest.getPlaceSchoolId());
 
         if (doesPlaceExist) {
@@ -88,6 +92,10 @@ public class PlaceController {
         Place place = getPlaceById(placeRequest.getPlaceId());
 
         int minimumTime = 60, minimumOccupation = 1;
+
+        if (isInvalidPlaceName(placeRequest.getPlaceName())) {
+            return badRequest(messages.get("EMPTY_PLACE_NAME"));
+        }
 
         if (!place.getName().equals(placeRequest.getPlaceName())) {
             if (checkPlaceExists(placeRequest.getPlaceName(), place.getSchool().getId())) {
@@ -127,6 +135,10 @@ public class PlaceController {
         return ResponseEntity
                 .badRequest()
                 .body(new MessageResponse(message));
+    }
+
+    private boolean isInvalidPlaceName(String placeName) {
+        return placeName == null || placeName.isEmpty();
     }
 
     private School getSchoolById(Long id) {
