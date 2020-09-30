@@ -2,6 +2,7 @@ package com.dev.springbootserver.controller;
 
 import com.dev.springbootserver.dto.request.SchoolRequest;
 import com.dev.springbootserver.dto.response.SchoolResponse;
+import com.dev.springbootserver.dto.response.UserResponse;
 import com.dev.springbootserver.errors.ResourceNotFoundException;
 import com.dev.springbootserver.messages.MessagesComponent;
 import com.dev.springbootserver.model.School;
@@ -47,6 +48,23 @@ public class SchoolController {
                 )));
 
         return ResponseEntity.ok(schoolResponses);
+    }
+
+    @GetMapping("/allUsersBySchool")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> listAllUsersBySchool(@RequestParam(value = "schoolId") Long schoolId) {
+        School school = getSchoolById(schoolId);
+        List<UserResponse> userResponses = new ArrayList<>();
+
+        school.getSchoolTeachers().forEach(user ->
+                userResponses.add(new UserResponse(
+                        user.getId(),
+                        user.getUsername(),
+                        user.getEmail()
+                ))
+        );
+
+        return ResponseEntity.ok(userResponses);
     }
 
     @GetMapping("/adminSchool")
