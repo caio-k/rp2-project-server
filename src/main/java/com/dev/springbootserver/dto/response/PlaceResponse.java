@@ -7,15 +7,13 @@ public class PlaceResponse {
     private String type;
     private int maxPeople;
     private int limitTimeSeconds;
-    private Long schoolId;
 
-    public PlaceResponse(Long placeId, String name, String type, int maxPeople, int limitTimeSeconds, Long schoolId) {
+    public PlaceResponse(Long placeId, String name, String type, int maxPeople, int limitTimeSeconds) {
         this.placeId = placeId;
         this.name = name;
         this.type = type;
         this.maxPeople = maxPeople;
         this.limitTimeSeconds = limitTimeSeconds;
-        this.schoolId = schoolId;
     }
 
     public Long getPlaceId() {
@@ -56,13 +54,5 @@ public class PlaceResponse {
 
     public void setLimitTimeSeconds(int limitTimeSeconds) {
         this.limitTimeSeconds = limitTimeSeconds;
-    }
-
-    public Long getSchoolId() {
-        return schoolId;
-    }
-
-    public void setSchoolId(Long schoolId) {
-        this.schoolId = schoolId;
     }
 }

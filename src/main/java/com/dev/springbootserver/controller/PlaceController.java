@@ -45,8 +45,7 @@ public class PlaceController {
                         place.getName(),
                         place.getType().name(),
                         place.getMaxPeople(),
-                        place.getLimitTimeSeconds(),
-                        place.getSchool().getId()
+                        place.getLimitTimeSeconds()
                 ))
         );
 
@@ -56,6 +55,10 @@ public class PlaceController {
     @PostMapping("/addPlace")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> addPlace(@RequestBody PlaceRequest placeRequest) {
+
+        if (isInvalidPlaceName(placeRequest.getPlaceName())) {
+            return badRequest(messages.get("EMPTY_PLACE_NAME"));
+        }
 
         boolean doesPlaceExist = checkPlaceExists(placeRequest.getPlaceName(), placeRequest.getPlaceSchoolId());
 
@@ -89,6 +92,10 @@ public class PlaceController {
 
         int minimumTime = 60, minimumOccupation = 1;
 
+        if (isInvalidPlaceName(placeRequest.getPlaceName())) {
+            return badRequest(messages.get("EMPTY_PLACE_NAME"));
+        }
+
         if (!place.getName().equals(placeRequest.getPlaceName())) {
             if (checkPlaceExists(placeRequest.getPlaceName(), place.getSchool().getId())) {
                 return badRequest(messages.get("PlACE_NAME_ALREADY_EXISTS_IN_SCHOOL"));
@@ -114,12 +121,9 @@ public class PlaceController {
 
     @DeleteMapping("/removePlace")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> removePlace(@RequestBody PlaceRequest placeRequest) {
-
-        Place place = getPlaceByNameAndSchoolId(placeRequest.getPlaceName(), placeRequest.getPlaceSchoolId());
-
+    public ResponseEntity<?> removePlace(@RequestParam(value = "placeId") Long placeId) {
+        Place place = getPlaceById(placeId);
         placeRepository.delete(place);
-
         return ResponseEntity.ok(new MessageResponse(messages.get("PLACE_DELETED")));
     }
 
@@ -127,6 +131,10 @@ public class PlaceController {
         return ResponseEntity
                 .badRequest()
                 .body(new MessageResponse(message));
+    }
+
+    private boolean isInvalidPlaceName(String placeName) {
+        return placeName == null || placeName.isEmpty();
     }
 
     private School getSchoolById(Long id) {
@@ -137,11 +145,6 @@ public class PlaceController {
     private Place getPlaceById(Long id) {
         return placeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(messages.get("INVALID_PLACE_ID")));
-    }
-
-    private Place getPlaceByNameAndSchoolId(String name, Long schoolId) {
-        return placeRepository.findByNameAndSchoolId(name, schoolId)
-                .orElseThrow(() -> new ResourceNotFoundException(messages.get("INVALID_PLACE_NAME")));
     }
 
     private boolean checkPlaceExists(String name, Long schoolId) {
