@@ -46,7 +46,7 @@ public class UserController {
         }
 
         if (user.getSchoolsTeacher().contains(school)) {
-            return ResponseEntity.ok(new MessageResponse(messages.get("USER_ALREADY_REGISTERED_IN_SCHOOL")));
+            return badRequest(messages.get("USER_ALREADY_REGISTERED_IN_SCHOOL"));
         }
 
         user.getSchoolsTeacher().add(school);
