@@ -79,10 +79,9 @@ public class ExitController {
         }
 
         Exit exit = getExitById(exitRequest.getExitId());
-        School school = getSchoolById(exitRequest.getSchoolId());
 
         if (!exit.getName().equals(exitRequest.getExitName())) {
-            if (checkExitExists(exitRequest.getExitName(), school.getId())) {
+            if (checkExitExists(exitRequest.getExitName(), exit.getSchool().getId())) {
                 return badRequest(messages.get("EXIT_NAME_ALREADY_EXISTS_IN_SCHOOL"));
             }
         }
