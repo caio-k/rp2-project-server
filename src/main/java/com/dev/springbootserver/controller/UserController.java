@@ -1,6 +1,7 @@
 package com.dev.springbootserver.controller;
 
 import com.dev.springbootserver.dto.request.UserSchoolRequest;
+import com.dev.springbootserver.dto.response.UserResponse;
 import com.dev.springbootserver.errors.ResourceNotFoundException;
 import com.dev.springbootserver.messages.MessagesComponent;
 import com.dev.springbootserver.model.ERole;
@@ -52,7 +53,11 @@ public class UserController {
         userRepository.save(user);
 
         return ResponseEntity.ok(
-                new MessageResponse(MessageFormat.format(messages.get("ADD_USER_TO_SCHOOL"), user.getUsername()))
+                new UserResponse(
+                        user.getId(),
+                        user.getUsername(),
+                        user.getEmail()
+                )
         );
     }
 
