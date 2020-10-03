@@ -81,7 +81,13 @@ public class PlaceController {
         placeRepository.save(place);
 
         return ResponseEntity.ok(
-                new MessageResponse(MessageFormat.format(messages.get("ADD_PLACE_TO_SCHOOL"), place.getName()))
+                new PlaceResponse(
+                        place.getId(),
+                        place.getName(),
+                        place.getType().name(),
+                        place.getMaxPeople(),
+                        place.getLimitTimeSeconds()
+                )
         );
     }
 
@@ -124,7 +130,7 @@ public class PlaceController {
     public ResponseEntity<?> removePlace(@RequestParam(value = "placeId") Long placeId) {
         Place place = getPlaceById(placeId);
         placeRepository.delete(place);
-        return ResponseEntity.ok(new MessageResponse(messages.get("PLACE_DELETED")));
+        return ResponseEntity.ok(MessageFormat.format(messages.get("PLACE_DELETED"), place.getName()));
     }
 
     private ResponseEntity<?> badRequest(String message) {

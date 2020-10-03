@@ -66,9 +66,7 @@ public class ExitController {
         Exit exit = new Exit(exitRequest.getExitName(), getSchoolById(exitRequest.getSchoolId()));
         exitRepository.save(exit);
 
-        return ResponseEntity.ok(
-                new MessageResponse(MessageFormat.format(messages.get("ADD_EXIT_TO_SCHOOL"), exit.getName()))
-        );
+        return ResponseEntity.ok(new ExitResponse(exit.getId(), exit.getName()));
     }
 
     @PutMapping("/update")
@@ -96,7 +94,7 @@ public class ExitController {
     public ResponseEntity<?> removeExit(@RequestParam(value = "exitId") Long exitId) {
         Exit exit = getExitById(exitId);
         exitRepository.delete(exit);
-        return ResponseEntity.ok(new MessageResponse(messages.get("EXIT_DELETED")));
+        return ResponseEntity.ok(MessageFormat.format(messages.get("EXIT_DELETED"), exit.getName()));
     }
 
     private ResponseEntity<?> badRequest(String message) {
