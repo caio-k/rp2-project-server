@@ -1,22 +1,30 @@
 package com.dev.springbootserver.controller;
 
 import com.dev.springbootserver.dto.request.ExitRequest;
+import com.dev.springbootserver.dto.response.ExitLogResponse;
 import com.dev.springbootserver.dto.response.ExitResponse;
 import com.dev.springbootserver.errors.ResourceNotFoundException;
 import com.dev.springbootserver.messages.MessagesComponent;
-import com.dev.springbootserver.model.Exit;
-import com.dev.springbootserver.model.School;
+import com.dev.springbootserver.model.*;
 import com.dev.springbootserver.payload.response.MessageResponse;
 import com.dev.springbootserver.repository.ExitRepository;
 import com.dev.springbootserver.repository.SchoolRepository;
+import com.dev.springbootserver.repository.UserRepository;
+import com.dev.springbootserver.repository.ExitLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Timestamp;
 import java.text.MessageFormat;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Comparator;
+import java.util.Set;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -28,6 +36,12 @@ public class ExitController {
 
     @Autowired
     SchoolRepository schoolRepository;
+
+    @Autowired
+    UserRepository userRepository;
+
+    @Autowired
+    ExitLogRepository exitLogRepository;
 
     @Autowired
     MessagesComponent messages;
@@ -97,6 +111,55 @@ public class ExitController {
         return ResponseEntity.ok(MessageFormat.format(messages.get("EXIT_DELETED"), exit.getName()));
     }
 
+    @PostMapping("/addExitLog")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<?> addExitLog(@RequestParam(value = "username") String username,
+                                        @RequestParam(value = "exitId") Long exitId) {
+        Exit exit = getExitById(exitId);
+        Set<ExitLog> exitLogs = exit.getExitLogs();
+
+        Optional<ExitLog> exitLogOptional = exitLogs.stream().filter(o -> o.getUser().getUsername().equals(username)).findFirst();
+
+        ExitLog exitLog;
+        if (exitLogOptional.isPresent()) {
+            exitLog = exitLogOptional.get();
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+            exitLog.setTimestamp(timestamp.getTime());
+        } else {
+            String message = "The teacher " + username + " ended his class at ";
+
+            User user = getUserByUsername(username);
+            ExitLogKey exitLogKey = new ExitLogKey(user.getId(), exitId);
+            exitLog = new ExitLog(user, exit, message, System.currentTimeMillis());
+            exitLog.setId(exitLogKey);
+        }
+
+        exitLogRepository.save(exitLog);
+        return ResponseEntity.ok(new ExitLogResponse(createFullMessage(exitLog.getMessage(), exitLog.getTimestamp())));
+    }
+
+    @GetMapping("/allValidTimestampsByExitId")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<?> allValidTimestampsByExitId(@RequestParam(value = "exitId") Long exitId) {
+        List<ExitLogResponse> exitLogResponses = new ArrayList<>();
+
+        Exit exit = getExitById(exitId);
+        List<ExitLog> exitLogs = new ArrayList<>(exit.getExitLogs());
+
+        exitLogs.sort(Comparator.comparingLong(ExitLog::getTimestamp));
+        LocalDate today = new Timestamp(System.currentTimeMillis()).toLocalDateTime().toLocalDate();
+
+        for (ExitLog exitLog : exitLogs) {
+            LocalDate day = new Timestamp(exitLog.getTimestamp()).toLocalDateTime().toLocalDate();
+
+            if (day.equals(today)) {
+                exitLogResponses.add(new ExitLogResponse(createFullMessage(exitLog.getMessage(), exitLog.getTimestamp())));
+            }
+        }
+
+        return ResponseEntity.ok(exitLogResponses);
+    }
+
     private ResponseEntity<?> badRequest(String message) {
         return ResponseEntity
                 .badRequest()
@@ -119,5 +182,16 @@ public class ExitController {
 
     private boolean checkExitExists(String name, Long schoolId) {
         return exitRepository.existsByNameAndSchoolId(name, schoolId);
+    }
+
+    private User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException(messages.get("USER_NOT_FOUND")));
+    }
+
+    private String createFullMessage(String message, Long timestamp) {
+        LocalTime localTime = new Timestamp(timestamp).toLocalDateTime().toLocalTime();
+
+        return message + localTime.toString().substring(0, 5);
     }
 }
