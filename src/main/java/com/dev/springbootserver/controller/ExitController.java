@@ -108,7 +108,10 @@ public class ExitController {
     public ResponseEntity<?> removeExit(@RequestParam(value = "exitId") Long exitId) {
         Exit exit = getExitById(exitId);
         exitRepository.delete(exit);
-        return ResponseEntity.ok(MessageFormat.format(messages.get("EXIT_DELETED"), exit.getName()));
+
+        return ResponseEntity.ok(new MessageResponse(
+                MessageFormat.format(messages.get("EXIT_DELETED"), exit.getName()))
+        );
     }
 
     @PostMapping("/addExitLog")
