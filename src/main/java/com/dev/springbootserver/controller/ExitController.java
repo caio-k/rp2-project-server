@@ -24,8 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Comparator;
-import java.util.Collections;
-import java.time.Instant;
 import java.util.Set;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -113,14 +111,14 @@ public class ExitController {
         return ResponseEntity.ok(MessageFormat.format(messages.get("EXIT_DELETED"), exit.getName()));
     }
 
-    @DeleteMapping("/addExitLog")
+    @PostMapping("/addExitLog")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<?> addExitLog(@RequestParam(value = "username") String username,
                                         @RequestParam(value = "exitId") Long exitId) {
         Exit exit = getExitById(exitId);
         Set<ExitLog> exitLogs = exit.getExitLogs();
 
-        Optional<ExitLog> exitLogOptional = exitLogs.stream().filter(o -> o.getUser().equals(username)).findFirst();
+        Optional<ExitLog> exitLogOptional = exitLogs.stream().filter(o -> o.getUser().getUsername().equals(username)).findFirst();
 
         ExitLog exitLog;
         if (exitLogOptional.isPresent()) {
@@ -132,7 +130,7 @@ public class ExitController {
 
             User user = getUserByUsername(username);
             ExitLogKey exitLogKey = new ExitLogKey(user.getId(), exitId);
-            exitLog = new ExitLog(user, exit, message, Instant.now().getEpochSecond());
+            exitLog = new ExitLog(user, exit, message, System.currentTimeMillis());
             exitLog.setId(exitLogKey);
         }
 
@@ -148,7 +146,7 @@ public class ExitController {
         Exit exit = getExitById(exitId);
         List<ExitLog> exitLogs = new ArrayList<>(exit.getExitLogs());
 
-        Collections.sort(exitLogs, Comparator.comparingLong(ExitLog::getTimestamp));
+        exitLogs.sort(Comparator.comparingLong(ExitLog::getTimestamp));
         LocalDate today = new Timestamp(System.currentTimeMillis()).toLocalDateTime().toLocalDate();
 
         for (ExitLog exitLog : exitLogs) {
@@ -196,5 +194,4 @@ public class ExitController {
 
         return message + localTime.toString().substring(0, 5);
     }
-
 }
