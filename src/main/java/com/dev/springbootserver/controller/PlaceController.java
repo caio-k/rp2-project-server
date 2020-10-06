@@ -130,7 +130,10 @@ public class PlaceController {
     public ResponseEntity<?> removePlace(@RequestParam(value = "placeId") Long placeId) {
         Place place = getPlaceById(placeId);
         placeRepository.delete(place);
-        return ResponseEntity.ok(MessageFormat.format(messages.get("PLACE_DELETED"), place.getName()));
+        
+        return ResponseEntity.ok(new MessageResponse(
+                MessageFormat.format(messages.get("PLACE_DELETED"), place.getName()))
+        );
     }
 
     private ResponseEntity<?> badRequest(String message) {
