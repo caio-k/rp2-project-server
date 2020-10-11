@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -50,7 +49,7 @@ public class UserUsePlaceController {
         List<UserUsePlaceResponse> userUsePlaceResponses = new ArrayList<>();
 
         for (Place place : places) {
-            userUsePlaces.addAll(userUsePlaceRepository.findAllByPlace(place));
+            userUsePlaces.addAll(userUsePlaceRepository.findAllByPlaceAndCounterGreaterThan(place, 0));
         }
 
         for (UserUsePlace userUsePlace : userUsePlaces) {
@@ -80,34 +79,46 @@ public class UserUsePlaceController {
     }
 
     private ResponseEntity<?> updateCounter(UserUsePlaceRequest userUsePlaceRequest, boolean isIncrease) {
+        if (userUsePlaceRequest.getNumberOfPeople() <= 0)
+            return badRequest(messages.get("NEGATIVE_NUMBER"));
+
         Place place = getPlaceById(userUsePlaceRequest.getPlaceId());
-        Set<UserUsePlace> userUsePlaces = place.getUserUsePlaces();
+        User user = getUserByUsername(userUsePlaceRequest.getUsername());
 
-        Optional<UserUsePlace> optionalUserUsePlace = userUsePlaces
+        int totalCounter = userUsePlaceRepository.findAllByPlaceAndCounterGreaterThan(place, 0)
                 .stream()
-                .filter(o -> o.getUser().getUsername().equals(userUsePlaceRequest.getUsername()))
-                .findFirst();
+                .mapToInt(UserUsePlace::getCounter)
+                .sum();
 
+        Optional<UserUsePlace> optionalUserUsePlace = userUsePlaceRepository.findByPlaceAndUser(place, user);
         UserUsePlace userUsePlace;
 
         if (optionalUserUsePlace.isPresent()) {
             userUsePlace = optionalUserUsePlace.get();
-            int newCounter = isIncrease ?
-                    userUsePlace.getCounter() + userUsePlaceRequest.getNumberOfPeople() :
-                    userUsePlace.getCounter() - userUsePlaceRequest.getNumberOfPeople();
+            int newCounter;
 
-            if (newCounter < 0 || newCounter > place.getMaxPeople())
-                return badRequest(messages.get("SURPLUS_NUMBER"));
+            if (isIncrease) {
+                newCounter = userUsePlace.getCounter() + userUsePlaceRequest.getNumberOfPeople();
+
+                if (totalCounter + userUsePlaceRequest.getNumberOfPeople() > place.getMaxPeople())
+                    return badRequest(messages.get("SURPLUS_NUMBER"));
+            } else {
+                newCounter = userUsePlace.getCounter() - userUsePlaceRequest.getNumberOfPeople();
+
+                if (newCounter < 0)
+                    return badRequest(messages.get("SURPLUS_NUMBER"));
+            }
 
             userUsePlace.setCounter(newCounter);
             userUsePlace.setLastUpdate(System.currentTimeMillis());
         } else {
-            if (userUsePlaceRequest.getNumberOfPeople() < 0 || userUsePlaceRequest.getNumberOfPeople() > place.getMaxPeople())
+            int numberOfPeople = userUsePlaceRequest.getNumberOfPeople();
+
+            if (!isIncrease || totalCounter + numberOfPeople > place.getMaxPeople())
                 return badRequest(messages.get("SURPLUS_NUMBER"));
 
-            User user = getUserByUsername(userUsePlaceRequest.getUsername());
             UserUsePlaceKey userUsePlaceKey = new UserUsePlaceKey(user.getId(), place.getId());
-            userUsePlace = new UserUsePlace(user, place, userUsePlaceRequest.getNumberOfPeople(), System.currentTimeMillis());
+            userUsePlace = new UserUsePlace(user, place, numberOfPeople, System.currentTimeMillis());
             userUsePlace.setId(userUsePlaceKey);
         }
 
