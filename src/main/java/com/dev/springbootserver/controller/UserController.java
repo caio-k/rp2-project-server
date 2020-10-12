@@ -1,7 +1,6 @@
 package com.dev.springbootserver.controller;
 
 import com.dev.springbootserver.dto.request.UserSchoolRequest;
-import com.dev.springbootserver.dto.response.PlaceWithFavoriteResponse;
 import com.dev.springbootserver.dto.response.UserResponse;
 import com.dev.springbootserver.errors.ResourceNotFoundException;
 import com.dev.springbootserver.messages.MessagesComponent;
