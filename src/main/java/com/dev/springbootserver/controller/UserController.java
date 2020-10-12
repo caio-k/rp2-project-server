@@ -1,14 +1,13 @@
 package com.dev.springbootserver.controller;
 
 import com.dev.springbootserver.dto.request.UserSchoolRequest;
+import com.dev.springbootserver.dto.response.PlaceWithFavoriteResponse;
 import com.dev.springbootserver.dto.response.UserResponse;
 import com.dev.springbootserver.errors.ResourceNotFoundException;
 import com.dev.springbootserver.messages.MessagesComponent;
-import com.dev.springbootserver.model.ERole;
-import com.dev.springbootserver.model.Role;
-import com.dev.springbootserver.model.School;
-import com.dev.springbootserver.model.User;
+import com.dev.springbootserver.model.*;
 import com.dev.springbootserver.payload.response.MessageResponse;
+import com.dev.springbootserver.repository.PlaceRepository;
 import com.dev.springbootserver.repository.SchoolRepository;
 import com.dev.springbootserver.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +27,9 @@ public class UserController {
 
     @Autowired
     SchoolRepository schoolRepository;
+
+    @Autowired
+    PlaceRepository placeRepository;
 
     @Autowired
     MessagesComponent messages;
@@ -82,6 +84,40 @@ public class UserController {
         );
     }
 
+    @PostMapping("/addFavoritePlace")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<?> addFavoritePlace(@RequestParam(value = "username") String username,
+                                              @RequestParam(value = "placeId") Long placeId) {
+        Place place = getPlaceById(placeId);
+        User user = getUserByUsername(username);
+
+        if (user.getFavoritePlaces().contains(place)) {
+            return badRequest(messages.get("PLACE_ALREADY_FAVORITE"));
+        }
+
+        user.getFavoritePlaces().add(place);
+        userRepository.save(user);
+
+        return ResponseEntity.ok(new MessageResponse(messages.get("PLACE_ADDED_FAVORITES")));
+    }
+
+    @DeleteMapping("/removeFavoritePlace")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<?> removeFavoritePlace(@RequestParam(value = "username") String username,
+                                                 @RequestParam(value = "placeId") Long placeId) {
+        Place place = getPlaceById(placeId);
+        User user = getUserByUsername(username);
+
+        if (user.getFavoritePlaces().contains(place)) {
+            user.getFavoritePlaces().remove(place);
+            userRepository.save(user);
+
+            return ResponseEntity.ok(new MessageResponse(messages.get("PLACE_REMOVED_FAVORITES")));
+        }
+
+        return badRequest(messages.get("PLACE_IS_NOT_FAVORITE"));
+    }
+
     private ResponseEntity<?> badRequest(String message) {
         return ResponseEntity
                 .badRequest()
@@ -91,6 +127,11 @@ public class UserController {
     private School getSchoolById(Long id) {
         return schoolRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(messages.get("INVALID_SCHOOL_ID")));
+    }
+
+    private Place getPlaceById(Long id) {
+        return placeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(messages.get("INVALID_PLACE_ID")));
     }
 
     private User getUserByUsername(String username) {

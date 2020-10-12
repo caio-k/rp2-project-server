@@ -2,12 +2,14 @@ package com.dev.springbootserver.controller;
 
 import com.dev.springbootserver.dto.request.PlaceRequest;
 import com.dev.springbootserver.dto.response.PlaceResponse;
+import com.dev.springbootserver.dto.response.PlaceWithFavoriteResponse;
 import com.dev.springbootserver.errors.ResourceNotFoundException;
 import com.dev.springbootserver.messages.MessagesComponent;
 import com.dev.springbootserver.model.*;
 import com.dev.springbootserver.payload.response.MessageResponse;
 import com.dev.springbootserver.repository.PlaceRepository;
 import com.dev.springbootserver.repository.SchoolRepository;
+import com.dev.springbootserver.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,6 +29,9 @@ public class PlaceController {
 
     @Autowired
     SchoolRepository schoolRepository;
+
+    @Autowired
+    UserRepository userRepository;
 
     @Autowired
     MessagesComponent messages;
@@ -50,6 +55,43 @@ public class PlaceController {
         );
 
         return ResponseEntity.ok(placeResponseList);
+    }
+
+    @GetMapping("/allPlacesWithFavoriteBySchool")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<?> listAllPlacesBySchoolId(@RequestParam(value = "schoolId") Long schoolId,
+                                                     @RequestParam(value = "username") String username) {
+        School school = getSchoolById(schoolId);
+        User user = getUserByUsername(username);
+        List<PlaceWithFavoriteResponse> placeWithFavoriteResponses = new ArrayList<>();
+
+        List<Place> favoritePlaces = new ArrayList<>(user.getFavoritePlaces());
+        List<Place> places = placeRepository.findAllBySchool(school);
+        places.removeAll(favoritePlaces);
+
+        places.forEach(place ->
+                placeWithFavoriteResponses.add(new PlaceWithFavoriteResponse(
+                        place.getId(),
+                        place.getName(),
+                        place.getType().name(),
+                        place.getMaxPeople(),
+                        place.getLimitTimeSeconds(),
+                        false
+                ))
+        );
+
+        favoritePlaces.forEach(place ->
+                placeWithFavoriteResponses.add(new PlaceWithFavoriteResponse(
+                        place.getId(),
+                        place.getName(),
+                        place.getType().name(),
+                        place.getMaxPeople(),
+                        place.getLimitTimeSeconds(),
+                        true
+                ))
+        );
+
+        return ResponseEntity.ok(placeWithFavoriteResponses);
     }
 
     @PostMapping("/addPlace")
@@ -130,7 +172,7 @@ public class PlaceController {
     public ResponseEntity<?> removePlace(@RequestParam(value = "placeId") Long placeId) {
         Place place = getPlaceById(placeId);
         placeRepository.delete(place);
-        
+
         return ResponseEntity.ok(new MessageResponse(
                 MessageFormat.format(messages.get("PLACE_DELETED"), place.getName()))
         );
@@ -158,5 +200,10 @@ public class PlaceController {
 
     private boolean checkPlaceExists(String name, Long schoolId) {
         return placeRepository.existsByNameAndSchoolId(name, schoolId);
+    }
+
+    private User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException(messages.get("USER_NOT_FOUND")));
     }
 }
