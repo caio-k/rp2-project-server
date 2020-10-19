@@ -22,7 +22,7 @@ public class Exit {
     @JoinColumn(name = "school_id")
     private School school;
 
-    @OneToMany(mappedBy = "exit")
+    @OneToMany(mappedBy = "exit", cascade = {CascadeType.ALL})
     private Set<ExitLog> exitLogs = new HashSet<>();
 
     public Exit() {
