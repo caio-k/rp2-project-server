@@ -9,8 +9,8 @@ public class DateUtils {
 
     private static final String zoneId = "America/Sao_Paulo";
 
-    public static boolean isSameDay(Long today, Long day) {
-        ZonedDateTime zonedDateTimeToday = longToZonedDateTime(today);
+    public static boolean isToday(Long day) {
+        ZonedDateTime zonedDateTimeToday = ZonedDateTime.ofInstant(Instant.now(), ZoneId.of(zoneId));
         ZonedDateTime zonedDateTimeDay = longToZonedDateTime(day);
 
         return zonedDateTimeToday.getYear() == zonedDateTimeDay.getYear() &&

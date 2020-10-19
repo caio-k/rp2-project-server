@@ -148,12 +148,9 @@ public class ExitController {
         List<ExitLog> exitLogs = new ArrayList<>(exit.getExitLogs());
 
         exitLogs.sort(Comparator.comparingLong(ExitLog::getTimestamp));
-        Long today = DateUtils.getTimestampOfSP();
 
         for (ExitLog exitLog : exitLogs) {
-            Long day = exitLog.getTimestamp();
-
-            if (DateUtils.isSameDay(today, day)) {
+            if (DateUtils.isToday(exitLog.getTimestamp())) {
                 exitLogResponses.add(new ExitLogResponse(createFullMessage(exitLog.getMessage(), exitLog.getTimestamp())));
             }
         }
