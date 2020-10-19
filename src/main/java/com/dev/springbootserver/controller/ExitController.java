@@ -11,15 +11,14 @@ import com.dev.springbootserver.repository.ExitRepository;
 import com.dev.springbootserver.repository.SchoolRepository;
 import com.dev.springbootserver.repository.UserRepository;
 import com.dev.springbootserver.repository.ExitLogRepository;
+import com.dev.springbootserver.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.Timestamp;
 import java.text.MessageFormat;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -126,14 +125,13 @@ public class ExitController {
         ExitLog exitLog;
         if (exitLogOptional.isPresent()) {
             exitLog = exitLogOptional.get();
-            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            exitLog.setTimestamp(timestamp.getTime());
+            exitLog.setTimestamp(DateUtils.getTimestampOfSP());
         } else {
             String message = "The teacher " + username + " ended his class at ";
 
             User user = getUserByUsername(username);
             ExitLogKey exitLogKey = new ExitLogKey(user.getId(), exitId);
-            exitLog = new ExitLog(user, exit, message, System.currentTimeMillis());
+            exitLog = new ExitLog(user, exit, message, DateUtils.getTimestampOfSP());
             exitLog.setId(exitLogKey);
         }
 
@@ -150,12 +148,9 @@ public class ExitController {
         List<ExitLog> exitLogs = new ArrayList<>(exit.getExitLogs());
 
         exitLogs.sort(Comparator.comparingLong(ExitLog::getTimestamp));
-        LocalDate today = new Timestamp(System.currentTimeMillis()).toLocalDateTime().toLocalDate();
 
         for (ExitLog exitLog : exitLogs) {
-            LocalDate day = new Timestamp(exitLog.getTimestamp()).toLocalDateTime().toLocalDate();
-
-            if (day.equals(today)) {
+            if (DateUtils.isToday(exitLog.getTimestamp())) {
                 exitLogResponses.add(new ExitLogResponse(createFullMessage(exitLog.getMessage(), exitLog.getTimestamp())));
             }
         }
@@ -193,8 +188,8 @@ public class ExitController {
     }
 
     private String createFullMessage(String message, Long timestamp) {
-        LocalTime localTime = new Timestamp(timestamp).toLocalDateTime().toLocalTime();
+        ZonedDateTime zonedDateTimeToday = DateUtils.longToZonedDateTime(timestamp);
 
-        return message + localTime.toString().substring(0, 5);
+        return message + zonedDateTimeToday.toString().substring(11, 16);
     }
 }
