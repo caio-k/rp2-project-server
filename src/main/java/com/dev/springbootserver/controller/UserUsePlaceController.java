@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -45,25 +46,15 @@ public class UserUsePlaceController {
                                                               @RequestParam(value = "schoolId") Long schoolId) {
         School school = getSchoolById(schoolId);
         List<Place> places = placeRepository.findAllBySchoolAndType(school, EPlace.valueOf(category));
-        List<UserUsePlace> userUsePlaces = new ArrayList<>();
-        List<UserUsePlaceResponse> userUsePlaceResponses = new ArrayList<>();
+        return getUserUsePlaceByPlaces(places);
+    }
 
-        for (Place place : places) {
-            userUsePlaces.addAll(userUsePlaceRepository.findAllByPlaceAndCounterGreaterThan(place, 0));
-        }
-
-        for (UserUsePlace userUsePlace : userUsePlaces) {
-            userUsePlaceResponses.add(
-                    new UserUsePlaceResponse(
-                            userUsePlace.getPlace().getId(),
-                            userUsePlace.getUser().getId(),
-                            userUsePlace.getCounter(),
-                            userUsePlace.getLastUpdate()
-                    )
-            );
-        }
-
-        return ResponseEntity.ok(userUsePlaceResponses);
+    @GetMapping("/allUsesFavoritePlaces")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<?> allUsesOfFavoritePlacesByUsernameAndSchoolId(@RequestParam(value = "username") String username,
+                                                                          @RequestParam(value = "schoolId") Long schoolId) {
+        List<Place> favoritePlaces = getFavoritePLacesBySchoolIdAndUsername(schoolId, username);
+        return getUserUsePlaceByPlaces(favoritePlaces);
     }
 
     @PutMapping("/increase")
@@ -152,5 +143,36 @@ public class UserUsePlaceController {
     private User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException(messages.get("USER_NOT_FOUND")));
+    }
+
+    private List<Place> getFavoritePLacesBySchoolIdAndUsername(Long schoolId, String username) {
+        User user = getUserByUsername(username);
+
+        return new ArrayList<>(user.getFavoritePlaces())
+                .stream()
+                .filter(place -> place.getSchool().getId().equals(schoolId))
+                .collect(Collectors.toList());
+    }
+
+    private ResponseEntity<?> getUserUsePlaceByPlaces(List<Place> places) {
+        List<UserUsePlace> userUsePlaces = new ArrayList<>();
+        List<UserUsePlaceResponse> userUsePlaceResponses = new ArrayList<>();
+
+        for (Place place : places) {
+            userUsePlaces.addAll(userUsePlaceRepository.findAllByPlaceAndCounterGreaterThan(place, 0));
+        }
+
+        for (UserUsePlace userUsePlace : userUsePlaces) {
+            userUsePlaceResponses.add(
+                    new UserUsePlaceResponse(
+                            userUsePlace.getPlace().getId(),
+                            userUsePlace.getUser().getId(),
+                            userUsePlace.getCounter(),
+                            userUsePlace.getLastUpdate()
+                    )
+            );
+        }
+
+        return ResponseEntity.ok(userUsePlaceResponses);
     }
 }

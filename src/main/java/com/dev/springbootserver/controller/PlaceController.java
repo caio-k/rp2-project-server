@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -62,10 +63,8 @@ public class PlaceController {
     public ResponseEntity<?> listAllPlacesBySchoolId(@RequestParam(value = "schoolId") Long schoolId,
                                                      @RequestParam(value = "username") String username) {
         School school = getSchoolById(schoolId);
-        User user = getUserByUsername(username);
         List<PlaceWithFavoriteResponse> placeWithFavoriteResponses = new ArrayList<>();
-
-        List<Place> favoritePlaces = new ArrayList<>(user.getFavoritePlaces());
+        List<Place> favoritePlaces = getFavoritePLacesBySchoolIdAndUsername(schoolId, username);
         List<Place> places = placeRepository.findAllBySchool(school);
         places.removeAll(favoritePlaces);
 
@@ -79,6 +78,27 @@ public class PlaceController {
                         false
                 ))
         );
+
+        favoritePlaces.forEach(place ->
+                placeWithFavoriteResponses.add(new PlaceWithFavoriteResponse(
+                        place.getId(),
+                        place.getName(),
+                        place.getType().name(),
+                        place.getMaxPeople(),
+                        place.getLimitTimeSeconds(),
+                        true
+                ))
+        );
+
+        return ResponseEntity.ok(placeWithFavoriteResponses);
+    }
+
+    @GetMapping("/allFavoritePlacesBySchool")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<?> listAllFavoritePlacesBySchoolId(@RequestParam(value = "schoolId") Long schoolId,
+                                                             @RequestParam(value = "username") String username) {
+        List<PlaceWithFavoriteResponse> placeWithFavoriteResponses = new ArrayList<>();
+        List<Place> favoritePlaces = getFavoritePLacesBySchoolIdAndUsername(schoolId, username);
 
         favoritePlaces.forEach(place ->
                 placeWithFavoriteResponses.add(new PlaceWithFavoriteResponse(
@@ -205,5 +225,14 @@ public class PlaceController {
     private User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException(messages.get("USER_NOT_FOUND")));
+    }
+
+    private List<Place> getFavoritePLacesBySchoolIdAndUsername(Long schoolId, String username) {
+        User user = getUserByUsername(username);
+
+        return new ArrayList<>(user.getFavoritePlaces())
+                .stream()
+                .filter(place -> place.getSchool().getId().equals(schoolId))
+                .collect(Collectors.toList());
     }
 }
