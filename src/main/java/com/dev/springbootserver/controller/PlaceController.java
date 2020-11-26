@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -191,6 +192,13 @@ public class PlaceController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> removePlace(@RequestParam(value = "placeId") Long placeId) {
         Place place = getPlaceById(placeId);
+        Set<User> users = place.getFavoriteUsers();
+
+        for (User user : users) {
+            user.getFavoritePlaces().remove(place);
+            userRepository.save(user);
+        }
+
         placeRepository.delete(place);
 
         return ResponseEntity.ok(new MessageResponse(

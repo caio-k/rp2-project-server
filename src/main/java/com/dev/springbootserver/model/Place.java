@@ -45,7 +45,7 @@ public class Place {
     @ManyToMany(mappedBy = "favoritePlaces", fetch = FetchType.EAGER)
     private Set<User> favoriteUsers = new HashSet<>();
 
-    @OneToMany(mappedBy = "place")
+    @OneToMany(mappedBy = "place", cascade = {CascadeType.ALL})
     private Set<UserUsePlace> userUsePlaces = new HashSet<>();
 
     public Place() {
