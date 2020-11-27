@@ -127,7 +127,7 @@ public class ExitController {
             exitLog = exitLogOptional.get();
             exitLog.setTimestamp(DateUtils.getTimestampOfSP());
         } else {
-            String message = "The teacher " + username + " ended his class at ";
+            String message = "The teacher " + username + " released the students at ";
 
             User user = getUserByUsername(username);
             ExitLogKey exitLogKey = new ExitLogKey(user.getId(), exitId);
